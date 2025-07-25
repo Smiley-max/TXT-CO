@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>TXT-CO – Farvekode & Afkoder</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 3em;
+      color: #444;
+      margin-bottom: 10px;
+    }
+    em {
+      color: #888;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+    input[type="file"], input[type="text"], button {
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #downloadLink {
+      margin-top: 10px;
+      display: inline-block;
+      background: #4CAF50;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+    }
+    hr {
+      margin: 40px auto;
+      width: 60%;
+    }
+    #resultat {
+      font-size: 1.2em;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 TXT-CO</h1>
+  <em>Farver taler højere end ord.</em>
+
+  <h2>➡️ Tekst → Farve-PNG</h2>
+  <input id="tekst" type="text" placeholder="Skriv din TXT-CO sætning" size="40">
+  <br>
+  <button onclick="lavFarvePNG()">🎨 Generer PNG</button>
+  <br><canvas id="farveCanvas" height="100"></canvas>
+  <br><a id="downloadLink" style="display:none;" download="txtco.png">⬇️ Download TXT-CO PNG</a>
+
+  <hr>
+
+  <h2>⬅️ PNG → Tekst</h2>
+  <input type="file" accept="image/png" onchange="læsePNG(this)">
+  <div id="resultat">Ingen TXT-CO sætning endnu.</div>
+
+  <script>
+    const bogstavFarver = {
+      a: "#FF0000", b: "#FF7F00", c: "#FFFF00", d: "#7FFF00", e: "#00FF00",
+      f: "#00FF7F", g: "#00FFFF", h: "#007FFF", i: "#0000FF", j: "#7F00FF",
+      k: "#FF00FF", l: "#FF007F", m: "#7F0000", n: "#7F3F00", o: "#7F7F00",
+      p: "#3F7F00", q: "#007F00", r: "#007F3F", s: "#007F7F", t: "#003F7F",
+      u: "#00007F", v: "#3F007F", w: "#7F007F", x: "#7F003F", y: "#000000",
+      z: "#999999", 
+      0: "#FFFFFF", 1: "#CCCCCC", 2: "#999999", 3: "#666666", 4: "#333333",
+      5: "#FFAAAA", 6: "#AAFFAA", 7: "#AAAAFF", 8: "#FFFFAA", 9: "#AAFFFF"
+    };
+
+    const farveTilBogstav = {};
+    for (const [bogstav, farve] of Object.entries(bogstavFarver)) {
+      farveTilBogstav[farve.toUpperCase()] = bogstav;
+    }
+
+    function lavFarvePNG() {
+      const tekst = document.getElementById("tekst").value.toLowerCase();
+      const canvas = document.getElementById("farveCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Filtrer kun gyldige tegn
+      const gyldigeTegn = tekst.split("").filter(t => bogstavFarver.hasOwnProperty(t));
+      const bredde = gyldigeTegn.length;
+      canvas.width = bredde;
+
+      gyldigeTegn.forEach((tegn, i) => {
+        ctx.fillStyle = bogstavFarver[tegn];
+        ctx.fillRect(i, 0, 1, canvas.height);
+      });
+
+      const link = document.getElementById("downloadLink");
+      link.href = canvas.toDataURL("image/png");
+      link.style.display = "inline";
+    }
+
+    function læsePNG(input) {
+      const fil = input.files[0];
+      if (!fil) return;
+
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => img.src = e.target.result;
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, img.width, 1).data;
+
+        let sætning = "";
+        for (let x = 0; x < img.width; x++) {
+          const i = x * 4;
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const hex = "#" + [r, g, b].map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
+          const bogstav = farveTilBogstav[hex];
+          if (bogstav) sætning += bogstav;
+        }
+
+        document.getElementById("resultat").innerText = "🔓 TXT-CO sætning: " + sætning;
+      };
+
+      reader.readAsDataURL(fil);
+    }
+  </script>
+</body>
+</html>
